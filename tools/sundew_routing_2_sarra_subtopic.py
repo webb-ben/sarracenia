@@ -6,11 +6,12 @@
 # This program reads all routing entries related to sender.conf
 # Than it reads in
 
-
-
 import os,re,sys
 
+# config , path and client name
+
 config=sys.argv[-1]
+dirpat=os.path.dirname(config)
 client=os.path.basename(config)
 client=client.replace('.conf','')
 
@@ -44,16 +45,23 @@ for table in sys.argv[1:-2]:
 config_pattern_list=[]
 config_pattern_bool=[]
 
-configfile=open(config,'r')
-for line in configfile:
-    words = line.split()
-    try:
-        if words[0] in ['accept','reject']:
-           config_pattern_list.append( re.compile(words[1]) )
-           config_pattern_bool.append( words[0] == 'accept' )
-    except:pass
+def swallow_config(path):
+    configfile=open(path,'r')
+    for line in configfile:
+        words = line.split()
+        try:
+            if words[0] == 'include':
+               path2 = dirpath + '/' + words[1]
+               swallow_config(path2)
+               continue
+            if words[0] in ['accept','reject']:
+               config_pattern_list.append( re.compile(words[1]) )
+               config_pattern_bool.append( words[0] == 'accept' )
+        except:pass
 
-configfile.close()
+    configfile.close()
+
+swallow_config(config)
 
 # check in one day of ddi products
 
