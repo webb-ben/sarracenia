@@ -177,20 +177,27 @@ cat > $TS/sender/aaa <<EOF
 # suggested sr_sender startup =
 #==============================
 
+broker amqps://feeder@ddi.cmc.ec.gc.ca/
+exchange xpublic
 
-broker amqps://feeder@ddi.cmc.ec.gc.ca/"
-exchange xpublic"
+subtopic #
 
-instances 8"
+queue_name q_feeder.\${PROGRAM}.\${CONFIG}.\${HOSTNAME}
 
-document_root /var/www/public_data"
-batch 500"
+instances 8
+
+mirror False
+
+# how to build the absolute path with announcement
+
+document_root /local/home/wxofeed/data/dd/public_data
+
+batch 500
 
 plugin pxSender_log.py
 
 #destination
 destination $destination
-mirror false
 EOF
 
 echo                     >> $TS/sender/aaa
