@@ -344,18 +344,13 @@ TESTING
 =======
 
 We install *sr_poll* BC_ENV_AQ_WAM.conf and *sr_sarra* get_BC_ENV_AQ_WAM.conf 
-on DDSR or DDSR_DEV. (if on ddsr_dev, there are various things to modify. Setting *xattr_disable true*, changing ddsr.cmc for ddsr_dev.cmc, in broker... *document_root* option in senders )
-
-Because these products are not available on DDSR, the two processes can be installed without damaging anything.
+on DDSR_DEV. (on ddsr_dev, there are various things to modify. Setting *xattr_disable true*, changing ddsr.cmc for ddsr_dev.cmc, in broker... *document_root* option in senders and perhaps more)
 
 Leave the processes running and check the right disposal/announcement of the products.
 
 
 RELATED CLIENTS
 ===============
-
-Here I skip sundew filters... that would become *sr_sarra* ...
-but I do check for them in the searching command below.
 
 There are five clusters to check in order to see where the products
 are going. Because these products are regularly coming in, we can
@@ -408,11 +403,16 @@ and include for specific products whenever it is suitable.
     ssh sarra@data-lb-ops1 '. .bash_profile; cd master/ddsr_science; srl grep BC-ENV_AQ-WAMR \*.log' | sed 's/log:.*$/log/' | sort -u
 
 
+MIGRATING FILTERS
+=================
+
+Will do another paper for sundew filters that become *sr_sarra*.
+
+
 MIGRATING SENDER
 ================
 
-(to be continued)
-
+Will do another paper on how to migrate senders.
 
 
 SEE ALSO
