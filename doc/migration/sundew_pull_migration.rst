@@ -403,7 +403,7 @@ and include for specific products whenever it is suitable.
     ssh sarra@data-lb-ops1 '. .bash_profile; cd master/sarra; srl grep BC-ENV_AQ-WAMR *.log' | sed 's/log:.*$/log/' | sort -u
 
 
-5- are the products flowing on ddsr.science : :
+5- are the products flowing on ddsr.science ::
 
     ssh sarra@data-lb-ops1 '. .bash_profile; cd master/ddsr_science; srl grep BC-ENV_AQ-WAMR \*.log' | sed 's/log:.*$/log/' | sort -u
 
