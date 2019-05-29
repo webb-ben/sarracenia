@@ -19,8 +19,8 @@ vip 142.135.12.146
 
 # post_broker is DDSR spread the poll messages
 
-post_broker amqp://USER@ddsr.cmc.ec.gc.ca/
-post_exchange xs_USER
+post_broker amqp://SOURCE@ddsr.cmc.ec.gc.ca/
+post_exchange xs_SOURCE
 
 # options
 
@@ -30,16 +30,6 @@ echo sleep `cat $1 | grep ^pull_sleep | awk '{print $2}' 2> /dev/null` >> $POLL
 echo timeout `cat $1 | grep ^timeout_get | awk '{print $2}' 2> /dev/null` >> $POLL
 
 echo >> $POLL
-
-extension=`cat $1 | grep ^extension | awk '{print $2}'`
-
-cat >> $POLL << EOF2
-
-# extension
-
-header sundew_extension=$extension
-
-EOF2
 
 cat >> $POLL << EOF2
 
@@ -97,7 +87,7 @@ if [[ "$protocol" == "ftp" ]]; then
    fi
 fi
 
-echo $credline > ./credentials.conf
+echo $credline > ./credentials
 
 echo "destination $credline"              >> $POLL
 echo                                      >> $POLL
@@ -131,11 +121,10 @@ cat >> $SARRA << EOF4
 
 instances 1
 
-# receives messages from same DDSR queue to spread the messages on cluster
-#broker amqp://feeder@ddsr.cmc.ec.gc.ca/
-xattr_disable True
-broker     amqp://feeder@localhost/
-exchange   xs_USER_type
+# receives messages from same DDSR queue spreads the messages
+
+broker amqp://feeder@ddsr.cmc.ec.gc.ca/
+exchange   xs_SOURCE
 
 # listen to spread the poll messages
 
