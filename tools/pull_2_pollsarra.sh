@@ -145,6 +145,7 @@ queue_name q_feeder.\${PROGRAM}.\${CONFIG}.SHARED
 queue_name q_feeder.\${PROGRAM}.\${CONFIG}.\${HOSTNAME}
 
 source_from_exchange True
+accept_unmatch       False
 
 # what to do with product
 
