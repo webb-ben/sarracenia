@@ -54,7 +54,7 @@ class PXSENDER_LOG(object):
    def do_send(self,parent):
        msg    = parent.msg
 
-       src  = parent.document_root + msg.relpath
+       src  = parent.base_dir + msg.relpath
        src  = src.replace(' ','\ ')
 
        dest = parent.destination + msg.new_dir + os.sep + msg.new_file
