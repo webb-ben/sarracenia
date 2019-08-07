@@ -17,10 +17,7 @@ cat >> $POLL << EOF
 
 # on doit avoir le vip de ddsr.cmc.ec.gc.ca
 
-vip 142.135.12.146
-
-# test on px1-ops
-vip 142.135.12.94
+#vip 142.135.12.146
 post_broker amqp://feeder@localhost/
 
 # post_broker is DDSR spread the poll messages
@@ -128,14 +125,11 @@ cat >> $SARRA << EOF4
 
 instances 1
 
-# test on px1-ops
-broker amqp://feeder@localhost/
-
 # broker is DDSR the poll messages were spreaded
 # broker is localhost and all products are processed locally
 
 #broker amqp://feeder@ddsr.cmc.ec.gc.ca/
-#broker amqp://feeder@localhost/
+broker amqp://feeder@localhost/
 exchange   xs_SOURCE
 
 # listen to spread the poll messages
