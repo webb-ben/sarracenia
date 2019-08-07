@@ -1,131 +1,86 @@
 #!/bin/bash
 
-# This script needs one argument a sundew pxSender config
-# It then creates a random directory /tmp/CVT****
+cd `dirname $1`
+cd ..
+
+p=`basename $1`
+
+# This script needs one argument a sundew pxSender config name
+# ex.:  satnet-toronto
 #
-# In /tmp/CVT****/.config/sarra/sender
-#    you find a modified version of the sender
-#    all the include files that the sender uses
-#
-#    The sender's config starts with some suggested sarracenia
-#    config lines as if the products were to be sent from ddi.cmc
-#    You can either change the resulting config or change this 
-#    script to set the proper broker to use
-#
-#    The remaining of the sundew sender config is the same 
-#    should be inspected, converted and cleaned... 
-#
-#    The include files remained untouched.
-#
-# In /tmp/CVT****/.config/sarra/plugins
-#    you find all the scripts that the sender (or includes) uses
-#    They must be all converted to sarracenia plugins
-#
-# In /tmp/CVT****/.config/sarra/credentials.conf
-#    suggested credentials from the remote client found in the config 
+# It will try to convert it to sarra sender
+# It will try the routing of a whole day 
+# it will not convert scripts (plugins)
 #
 
-# mandatory config name should
+SR_SENDER=sender/${p}.conf
+TX_CONF=sender/${p}.conf.orig
 
-if [[ (($# != 1)) ]]; then
-   echo 'error 1: need a sender config name'
-   exit 1
-fi
+# ok prepare sarra sender file
 
-# mandatory config name has .conf
+mv sender/${p}.conf sender/${p}.conf.orig
 
-CF=`echo $1 | grep '.conf'`
+# keep header documentation of sender file in sr_sender config 
 
-if [[ -z "$CF" ]]; then
-   echo 'error 2: need a sender config name'
-   exit 2
-fi
+vi -c '1,/^type/-1w!./doc' -c q  sender/${p}.conf.orig
+cat ./doc > $SR_SENDER
+rm  ./doc
 
-# mandatory sender config name is in /tx/ directory
+# insert standard DDSR sender starting lines
 
-cmd='realpath'
+cat >> $SR_SENDER << EOF
 
-RP=`which realpath`
-if [[  -z "$RP" ]]; then
-   cmd='readlink -f'
-fi
+instances 1
 
-RP=`eval $cmd $1`
+# broker is localhost where the product resides
 
-TX=`echo $RP | grep '/tx/'`
-if [[  -z "$TX" ]]; then
-   echo 'error 3: need a sender config name'
-   exit
-fi
+broker   amqp://feeder@localhost/
+exchange xpublic
 
-# create a temporary sarra config tree
+EOF
 
-TS='/tmp/CVT'$RANDOM'/.config/sarra'
-echo
-echo "Creating $TS for conversion"
-echo "Please visit and convert these files to sarra"
-echo
-mkdir -p $TS
+cat >> $SR_SENDER << EOF
+# queue
 
-# copy tx sender config to sarra sender config
+prefetch   10
+queue_name q_feeder.\${PROGRAM}.\${CONFIG}.\${HOSTNAME}
 
-CF=`echo $RP | sed 's/^.*tx\///'`
+# where on this broker
 
-mkdir  $TS/sender
-cp $RP $TS/sender
-echo $TS/sender/$CF
+base_dir /apps/sarra/public_data
 
-# if tx sender has include ... cp to sarra sender config
+# what to do with product
 
-TX=`echo $RP | sed 's/\/tx\/.*$/\/tx/'`
+mirror   False
+EOF
 
-IC=`cat $RP | grep '^include' | awk '{print $2}'`
+# add some standard options from the tx sender
 
-if [[ ! -z "$IC" ]]; then
-	 
-   IC2=''
-   for INC in $IC; do
-       cp $TX/$INC $TS/sender
-       echo $TS/sender/$INC
-       IC2=$IC2' '$TX/$INC
-   done
+lock=`cat $TX_CONF| grep '^lock'       | awk '{print $2}' 2>/dev/null`
+chmd=`cat $TX_CONF| grep '^chmod'      | awk '{print $2}' 2>/dev/null`
+batc=`cat $TX_CONF| grep '^batch'      | awk '{print $2}' 2>/dev/null`
+timo=`cat $TX_CONF| grep '^timeout'    | awk '{print $2}' 2>/dev/null`
 
-   if [[ ! -z "$IC2" ]]; then
+if [[ -z "$lock" ]]; then lock="None"; fi
+if [[ -z "$batc" ]]; then batc="100";  fi
 
-      #include in include ?
-      IC3=`cat $IC2 | grep '^include' | awk '{print $2}'`
-      for INC in $IC3; do
-          cp $TX/$INC $TS/sender
-          echo $TS/sender/$INC
-      done
-   fi
-fi
+echo "batch    $batc" >> $SR_SENDER
+echo "inflight $lock" >> $SR_SENDER
 
-# any of these configs has scripts
-
-SC=`cat $TS/sender/* | grep '\.py$' | grep -v '^#' | sed 's/^.*=//' | sed 's/^.* //'| sort -u`
-
-if [[ ! -z "$SC" ]]; then
-   mkdir $TS/plugins
-
-   for SCR in $SC; do
-       cp $TX/../scripts/$SCR $TS/plugins
-       echo $TS/plugins/$SCR
-   done
-fi
+if [[ ! -z "$chmd" ]]; then echo "chmod    $chmd" >> $SR_SENDER; fi
+if [[ ! -z "$timo" ]]; then echo "timeout  $timo" >> $SR_SENDER; fi
+echo >> $SR_SENDER
 
 # credentials and destination
 
-SCONF=$TS/sender/$CF
-
-protocol=`cat $SCONF| grep '^protocol'    | awk '{print $2}' 2>/dev/null`
-pro_host=`cat $SCONF| grep '^host'        | awk '{print $2}' 2>/dev/null`
-pro_port=`cat $SCONF| grep '^port'        | awk '{print $2}' 2>/dev/null`
-pro_user=`cat $SCONF| grep '^user'        | awk '{print $2}' 2>/dev/null`
-pro_pass=`cat $SCONF| grep '^password'    | awk '{print $2}' 2>/dev/null`
-pro_mode=`cat $SCONF| grep '^ftp_mode'    | awk '{print $2}' 2>/dev/null`
-pro_keyf=`cat $SCONF| grep '^ssh_keyfile' | awk '{print $2}' 2>/dev/null`
-pro_bina=`cat $SCONF| grep '^binary'      | awk '{print $2}' 2>/dev/null`
+protocol=`cat $TX_CONF| grep '^protocol'    | awk '{print $2}' 2>/dev/null`
+pro_host=`cat $TX_CONF| grep '^host'        | awk '{print $2}' 2>/dev/null`
+pro_port=`cat $TX_CONF| grep '^port'        | awk '{print $2}' 2>/dev/null`
+pro_user=`cat $TX_CONF| grep '^user'        | awk '{print $2}' 2>/dev/null`
+pro_pass=`cat $TX_CONF| grep '^password'    | awk '{print $2}' 2>/dev/null`
+pro_mode=`cat $TX_CONF| grep '^ftp_mode'    | awk '{print $2}' 2>/dev/null`
+pro_keyf=`cat $TX_CONF| grep '^ssh_keyfile' | awk '{print $2}' 2>/dev/null`
+pro_bina=`cat $TX_CONF| grep '^binary'      | awk '{print $2}' 2>/dev/null`
 
 credline="${protocol}://${pro_user}"
 destination=$credline
@@ -139,7 +94,7 @@ destination="$destination@$pro_host"
 
 if [[ ! -z "$pro_port" ]]; then
    credline="$credline:$pro_port"
-   destination="$destination@$pro_port"
+   destination="$destination:$pro_port"
 fi
 
 if [[ "$protocol" == "sftp" ]]; then
@@ -151,59 +106,35 @@ fi
 if [[ "$protocol" == "ftp" ]]; then
    if [[ ! -z "$pro_mode" ]]; then
       if   [[ "$pro_mode" == "active" ]]; then
-              credline="$credline passive=False"
+              credline="$credline active,"
       elif [[ "$pro_mode" == "passive" ]]; then
-              credline="$credline passive=True"
+              credline="$credline passive,"
       fi
    fi
    if [[ ! -z "$pro_bina" ]]; then
       if   [[ "$pro_bina" == "True" ]]; then
-              credline="$credline binary=True"
+              credline="$credline binary"
       elif [[ "$pro_mode" == "False" ]]; then
-              credline="$credline binary=False"
+              credline="$credline ascii"
       fi
    fi
 fi
 
-echo $credline > $TS/credentials.conf
-echo
-echo $TS/credentials.conf
+credline=`echo $credline | sed 's/,$//'`
 
-# suggest a sender header
+echo $credline > ./credentials
 
-cat > $TS/sender/aaa <<EOF
+echo                 >> $SR_SENDER
+echo "# destination" >> $SR_SENDER
+echo                 >> $SR_SENDER
+echo "destination $destination" >> $SR_SENDER
+echo                                      >> $SR_SENDER
+echo "# where to send the products"       >> $SR_SENDER
+echo                                      >> $SR_SENDER
+ 
+echo "# verify/pick from orignal config"  >> $SR_SENDER
+echo                                      >> $SR_SENDER
 
-#==============================
-# suggested sr_sender startup =
-#==============================
-
-broker amqps://feeder@ddi.cmc.ec.gc.ca/
-exchange xpublic
-
-subtopic #
-
-queue_name q_feeder.\${PROGRAM}.\${CONFIG}.\${HOSTNAME}
-
-instances 8
-
-mirror False
-
-# how to build the absolute path with announcement
-
-document_root /local/home/wxofeed/data/dd/public_data
-
-batch 500
-
-plugin pxSender_log.py
-
-#destination
-destination $destination
-EOF
-
-echo                     >> $TS/sender/aaa
-cat $TS/credentials.conf >> $TS/sender/aaa
-echo                     >> $TS/sender/aaa
-
-cat $TS/sender/$CF >> $TS/sender/aaa
-
-mv $TS/sender/aaa $TS/sender/$CF
+vi -c '/^type/,$w!./ORIG' -c q sender/${p}.conf.orig
+cat ./ORIG >> $SR_SENDER
+rm  ./ORIG
