@@ -159,7 +159,7 @@ sarracenia depot on github under ~/sarracania/sarra/plugins. (If not in the
 master they would be found in branch issue199)
 
 The config directory is just a straight copy of all the configs 
-for each of the clusters... and here sr_sarra means the sarra portion
+for each of the clusters... and here **sr_pxatx** means the sarra portion
 of pxatx.
 
 For the logs and the data, one would think to have a whole day and so
@@ -189,18 +189,15 @@ Should you find better ways or modifications to do, dont hesitate.
 For now, should you use them out of the box, here is how I would
 proceed with the them.
 
-Under ~/convert, create your own working/migrating directory... ex. SENDERS
-Go there. Select one config that you would like to start working with.
+Under ~/convert, create your own working/migrating directory... ex.::
+
+    mkdir SENDERS
+    cd    SENDERS
+
+Select one config that you would like to start working with.
 (Perhaps to start, the senders with the smallest number of delivery
 would be a good start... dont do them all, keep some for the other
 team member to sharp their teeth too).
-
-To get the first 20 smallest senders ... the easiest, over file size::
-
-    ls -al ~/convert/log/sundew/px2-ops/tx* | \
-       awk '{print $5 " " $9}'              | \
-       sed 's/ .*\// /'                     | \
-       sort -n                              | head -n20
 
 To get ready, make sure that the plugins under ~/convert/plugins are
 sarra-wise available::
@@ -212,7 +209,7 @@ And perhaps adjust the path to be able to call the tools easily::
      export PATH=.~/convert/tools:$PATH
 
 Ok now, convert that sender... Here I suppose as in the presentation
-that it is accessdepot-iml.conf for simplicity::
+that it is accessdepot-iml.conf for simplicity (or remainder)::
 
      # convert the sender place infos in directory ACCESSDEPOT_IML
      # The script will show an estimated of time to finish
@@ -285,6 +282,17 @@ by gaving it a day of products... The few I did were enough to leave
 sundew-senders migration alone and focus on pxatx-sundew. I would certainly
 start from there should I be you. But again, this is a personal choice...
 Your ideas and methods being as good as mine.
+
+Another point... I reenforce... When sarra will get modified for the migration
+and when more products and more products will be sitting and announced from it,
+the migration setup will need to be refreshed. So time to time, it is
+expected to redo a copy of the all of yesterday's products on sarra and
+get the corresponding sundew'sender logs for that same day.
+It will be mandatory to up to date them for a better
+conversion/migration process...
+
+The more progress is done, implying sarra products (additions, directory
+changes... etc) the more updates required.
 
 Have fun   :-)
 
