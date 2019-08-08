@@ -20,28 +20,53 @@ This document was written right after my presentation of August 8th.
 It will basically be a summary of what was said for the sundew sender
 migration part of it.
 
-In order to make a right reference from sundew table routings and sender 
-configuration options, I suggest a setup and some tools. It is to be taken
-as a suggestion. I have heavily used a similar setup on my desktop in
-the conversion of sundew pull to sarra poll-sarra pairs. I have also used
-one of the sender script to convert simple sender from pxatx (or sundew in
-fact too) that requiered to be migrated to sarra in the mist of that
-conversion.  
+The scripts used in the presentation use routing tables, sender 
+configuration, logs and a dump of sarra database of products.
+
+I used a similar setup with similar tools on my desktop. All of this,
+is to be taken as a suggestion or a startup. I have heavily used some
+of it during the conversion of sundew pull to sarra poll-sarra pairs.
+
+Most if the time for pxatx senders, I would only use pxsender_2_sarra.sh.
+It converts sundew-sender to a sarra-sender in a dummy fashion... no extra.
+From the converted config, I would simply add the migrated polled products
+I had just migrated and drop the rest of the sundew sender config.
+
+The sender tools where an entire day of products is presented as messages
+to the sarra sender migrated I used 3 times... I simply coded that while
+I tried to migrate sundew-sender as part of my migration project.
+As porting sundew-sender to sarra showed to be a much greater task than
+I expected, I simply drop the idea. And did not use these tools anymore.
+
+Peter wanted me to present my work. The goal is to engage his troup
+in the project of migrating the sundew-sender to sarra.
+
+All of these facts must be considered when using the presented tools.
+I am not saying THEY ARE the tools to use in order to properly conduct
+I am not saying the are reliable enough to be used blindly.
+For myself, they would certainly be my starting point, should I be part
+of that project.
+
+So you the reader are part of that project now I guess if you read this.
+I propose the tools as a start for your own migration. Use them as 
+tips, basis, ideas, or tools... make of them what you want...  and
+good luck for your journey in this big sundew-sender conversion 
+project.
 
 SETUP
 =====
 
-After having poke the several clusters (sundew and sarra) with tools
-on data-lb-ops1 (under users px and sarra)... it was so annoying that
-I decided one day to get all the information (from this date) available
+Historically, after having poke the several clusters (sundew and sarra)
+with tools on data-lb-ops1 (under users px and sarra)... it was so 
+annoying that I decided one day to get all the information available
 on all the clusters and work from my desktop. I am convinced that it
-strikes you as simpler than the tasks underlined above.
+strikes you as simpler than doing "srl grep" or "pxl grep" in all clusters.
+So my tools would work on a local copy of the needed files.
 
-In order to use scripts provided as is, it would be better to use
-the same setup as I was using when developping/using them. Of course,
-this is not mandatory, and should you prefer other setups, you can
-do so and modify the scripts accordingly... or write you own... I
-dont mind, I just present/propose some tools that I have used.
+In order to use the scripts provided as is, as a start, you would need
+to install the same setup as I was using when developping/using them.
+Of course, this is not mandatory, and should you prefer other setups,
+you can do so and modify the scripts accordingly... or write you own...
 
 So my setup was::
 
@@ -140,15 +165,20 @@ of pxatx.
 For the logs and the data, one would think to have a whole day and so
 I would always aim at getting all of "yesterday".  
 
+So one can go on each node and scp "yesterday's log" where the setup is
+installed under the proper representing directory.
+
 The creation of data file (ddsr.20190804) was done as follow::
 
      ssh sarra@data-lb-ops1 '. ./.bash_profile; cd ~/master/saa; srl "cd /apps/sarra/public_data; find 20190804 -type f"' >> ddsr.20190804
+
 
 On the server where you would to the migration, you need sarracenia of course.
 The fact that px1-ops was off the sarra cluster was an opportunity since it
 provides the same environment as the targetted cluster. If one such node is
 not available when you a migration to a cluster (in fact I would be tempted
-to say any migration of any kinds) ... I recommand you to have this setup.
+to say any migration of any kinds) ... I recommand you to have such a node
+available.
 
 SUNDEW SENDER CONVERSION PROCESS
 ================================
@@ -156,10 +186,11 @@ SUNDEW SENDER CONVERSION PROCESS
 I cannot say for sure that all my tools get everything straight.
 Should you find better ways or modifications to do, dont hesitate.
 
-For now, here is how I would proceed with the tools::
+For now, should you use them out of the box, here is how I would
+proceed with the them.
 
-Under ~/convert, create your own working/migrating directory.
-Go there. Pick one config that you would like to start working with.
+Under ~/convert, create your own working/migrating directory... ex. SENDERS
+Go there. Select one config that you would like to start working with.
 (Perhaps to start, the senders with the smallest number of delivery
 would be a good start... dont do them all, keep some for the other
 team member to sharp their teeth too).
@@ -171,14 +202,17 @@ To get the first 20 smallest senders ... the easiest, over file size::
        sed 's/ .*\// /'                     | \
        sort -n                              | head -n20
 
-
 To get ready, make sure that the plugins under ~/convert/plugins are
 sarra-wise available::
  
      cp ~/convert/plugins/* ~/.config/sarra/plugins
 
+And perhaps adjust the path to be able to call the tools easily::
+ 
+     export PATH=.~/convert/tools:$PATH
+
 Ok now, convert that sender... Here I suppose as in the presentation
-that it is accessdepot-iml.conf::
+that it is accessdepot-iml.conf for simplicity::
 
      # convert the sender place infos in directory ACCESSDEPOT_IML
      # The script will show an estimated of time to finish
@@ -245,14 +279,13 @@ that it is accessdepot-iml.conf::
      # the addition of processes, or products to sarra
      
 
-The presentation of this was done. And as I mentionned, I have not
-done many of these sundew senders... only 2.  It was enough to figure
-out that the work involved in migrating sundew senders was way too 
-much if I wanted to finish the migration of pxatx' sundew pull processes
-and so I opted to only migrate the sender's config into sarra and
-deliver only the products I had migrated from pxatx... leaving the
-whole suite of products to another sundew-sender migration project
-to which I guess you are now responsible of some since you are 
-reading this document... have fun  :-)
+This was done, as is, in today's presentation. I cannot say it enough...
+as I mentionned, I have not done many of these sundew senders conversions
+by gaving it a day of products... The few I did were enough to leave
+sundew-senders migration alone and focus on pxatx-sundew. I would certainly
+start from there should I be you. But again, this is a personal choice...
+Your ideas and methods being as good as mine.
+
+Have fun   :-)
 
 
