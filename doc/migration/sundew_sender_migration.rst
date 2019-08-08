@@ -283,16 +283,19 @@ sundew-senders migration alone and focus on pxatx-sundew. I would certainly
 start from there should I be you. But again, this is a personal choice...
 Your ideas and methods being as good as mine.
 
-Another point... I reenforce... When sarra will get modified for the migration
-and when more products and more products will be sitting and announced from it,
-the migration setup will need to be refreshed. So time to time, it is
-expected to redo a copy of the all of yesterday's products on sarra and
-get the corresponding sundew'sender logs for that same day.
-It will be mandatory to up to date them for a better
-conversion/migration process...
+When using tools, one can trigger them on say 5 sender configs and
+have more work ahead. The experience gathered during these 5 migrations
+can be ported into the tools hoping to get better results for the next 5
+and so on. So always have 5 in the oven. It is important to run batches
+since some may take hours to be processed. 
 
-The more progress is done, implying sarra products (additions, directory
-changes... etc) the more updates required.
+If no change is done to the sarra db layout and products, the files in
+the setup are accurate enought to pursue the migration.
+
+On the opposite, changes to the sarra db layout and product additions,
+removals or whatever changes, requieres the files "sarra db for yesterday"
+and "sundew logs for yesterday"  to updated... Or else, the results from
+the tools will not represent the current state of things.
 
 Have fun   :-)
 
