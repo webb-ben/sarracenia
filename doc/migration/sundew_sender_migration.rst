@@ -294,7 +294,7 @@ the setup are accurate enought to pursue the migration.
 
 On the opposite, changes to the sarra db layout and product additions,
 removals or whatever changes, requieres the files "sarra db for yesterday"
-and "sundew logs for yesterday"  to updated... Or else, the results from
+and "sundew logs for yesterday"  to be updated... Or else, the results from
 the tools will not represent the current state of things.
 
 Have fun   :-)
