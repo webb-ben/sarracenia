@@ -14,7 +14,7 @@ echo INGESTED=$INGESTED >> /tmp/aaa
 echo NB_OF_INGESTION_PER_DAY=`grep Ingested ~/convert/log/pxatx/*${p}*.log*| wc -l` >> /tmp/aaa
 echo >> /tmp/aaa
 
-SOURCE_REF=`grep $INGESTED ~/convert/log/pxatx/*ddsr*| grep delivered | tail -n1 | sed 's/^.*http/http/' | sed 's/:20190520.*$//'`
+SOURCE_REF=`grep $p ~/convert/log/pxatx/*ddsr*| grep delivered | tail -n1 | sed 's/^.*http/http/' | sed 's/:20190520.*$//'`
 echo SOURCE_REF=$SOURCE_REF >> /tmp/aaa
 SOURCE=`echo $SOURCE_REF | sed 's/^.*[ \/]20190520\///' | sed 's/\/.*$//'`
 echo SOURCE=$SOURCE >> /tmp/aaa
