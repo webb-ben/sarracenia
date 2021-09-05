@@ -168,11 +168,11 @@ class Flow:
 
     def loadCallbacks(self, plugins_to_load):
 
-        logger.info('imports to load: %s' % (self.o.imports))
+        #logger.info('imports to load: %s' % (self.o.imports))
         for m in self.o.imports:
             importlib.import_module(m)
 
-        #logger.info( 'plugins to load: %s' % ( plugins_to_load ) )
+        logger.info( 'plugins to load: %s' % ( plugins_to_load ) )
         for c in plugins_to_load:
 
             plugin = sarracenia.flowcb.load_library(c, self.o)
@@ -270,7 +270,7 @@ class Flow:
         next_housekeeping = nowflt() + self.o.housekeeping
 
         current_rate = 0
-        total_messages = 0
+        total_messages = 1
         start_time = nowflt()
 
         current_sleep = self.o.sleep
@@ -320,19 +320,11 @@ class Flow:
 
                 # adjust message after action is done, but before 'after_work' so adjustment is possible.
                 for m in self.worklist.ok:
-
                     if ('new_baseUrl' in m) and (m['baseUrl'] != m['new_baseUrl'] ):
                         m['baseUrl'] = m['new_baseUrl']
-
                     if ('new_relPath' in m ) and ( m['relPath'] != m['new_relPath'] ) :
                         m['relPath'] = m['new_relPath']
-                        if m['new_relPath'][0] == os.sep :
-                            m['subtopic'] = m['new_relPath'].split(os.sep)[1:-1]
-                        else:
-                            m['subtopic'] = m['new_relPath'].split(os.sep)[:-1]
-
-                    if self.o.post_baseDir:
-                        m['relPath'] = m['relPath'].replace(self.o.post_baseDir, '', 1)
+                        m['subtopic'] = m['new_subtopic']
 
                 self.ack(self.worklist.rejected)
                 self.worklist.rejected = []
@@ -417,7 +409,6 @@ class Flow:
              default_accept_directory=self.o.baseDir
 
         for m in self.worklist.incoming:
-            #logger.warning('message: %s ' % m)
 
             if 'oldname' in m:
                 url = self.o.set_dir_pattern(m['baseUrl'],m) + os.sep + m['oldname']
@@ -431,7 +422,7 @@ class Flow:
                     if mask_regexp.match(urlToMatch):
                         oldname_matched = accepting
                         break
-
+            
             url = self.o.set_dir_pattern(m['baseUrl'],m) + os.sep + m['relPath']
             if 'sundew_extension' in m and url.count(":") < 1: 
                 urlToMatch= url + ':' + m['sundew_extension']
@@ -456,7 +447,7 @@ class Flow:
                                          (m['oldname']))
                         elif self.o.log_reject:
                             logger.info("reject: mask=%s strip=%s url=%s" %
-                                        (str(mask), strip, url))
+                                        (str(mask), strip, urlToMatch))
                         self.worklist.rejected.append(m)
                         break
 
@@ -519,17 +510,12 @@ class Flow:
 
     def post(self):
 
-        #logger.info('on_post starting for %d messages' % len(self.worklist.ok))
-        #logger.info('post_baseDir=%s' % self.o.post_baseDir)
-
-        #self._runCallbacksWorklist('on_posts')
         for p in self.plugins["post"]:
             p(self.worklist)
 
     def report(self):
         # post reports
         # apply on_report plugins
-        #logger.info('unimplemented')
         pass
 
     def write_inline_file(self, msg):
@@ -560,7 +546,9 @@ class Flow:
         else:
             data = msg['content']['value'].encode('utf-8')
 
-        if msg['integrity']['method'] == 'cod':
+        if 'cod,' in self.o.integrity_method :
+            algo_method = self.o.integrity_method[4:]
+        elif msg['integrity']['method'] == 'cod':
             algo_method = msg['integrity']['value']
         else:
             algo_method = msg['integrity']['method']
@@ -970,7 +958,8 @@ class Flow:
                         self.worklist.ok.append(msg)
                         break
                     else:
-                        logger.info("warning downloaded attempt %d failed: %s" % ( i, new_path) )
+                        logger.info("attempt %d failed to download %s/%s to %s" \
+                            % ( i, msg['baseUrl'], msg['relPath'], new_path) )
                     i = i + 1
 
                 if not ok:
@@ -988,7 +977,7 @@ class Flow:
 
         self.o = options
 
-        logger.debug("%s_transport download" % self.scheme)
+        logger.debug("%s_transport download relPath=%s" % (self.scheme, msg['relPath']) )
 
         token = msg['relPath'].split('/')
         cdir = '/' + '/'.join(token[:-1])
@@ -1024,7 +1013,6 @@ class Flow:
                 logger.debug("%s_transport download connects" % self.scheme)
                 self.proto[self.scheme] = sarracenia.transfer.Transfer.factory(
                     self.scheme, self.o)
-                logger.debug("HOHO proto %s " % type(self.proto))
                 ok = self.proto[self.scheme].connect()
                 if not ok:
                     self.proto[self.scheme] = None
@@ -1043,7 +1031,6 @@ class Flow:
             if hasattr(self.proto[self.scheme], 'getcwd'):
                 cwd = self.proto[self.scheme].getcwd()
 
-            logger.debug(" proto %s " % type(self.proto[self.scheme]))
             if cwd != cdir:
                 logger.debug("%s_transport download cd to %s" %
                              (self.scheme, cdir))
@@ -1071,7 +1058,11 @@ class Flow:
             # FIXME  locking for i parts in temporary file ... should stay lock
             # and file_reassemble... take into account the locking
 
-            self.proto[self.scheme].set_sumalgo(msg['integrity']['method'])
+            if 'cod,' in self.o.integrity_method:
+                 download_algo = self.o.integrity_method[4:]
+            else:
+                 download_algo = msg['integrity']['method']
+            self.proto[self.scheme].set_sumalgo(download_algo)
 
             if options.inflight == None or (
                 ('blocks' in msg) and (msg['blocks']['method'] == 'inplace')):
@@ -1103,6 +1094,7 @@ class Flow:
             if accelerated:
                 len_written = self.proto[self.scheme].getAccelerated(
                     msg, remote_file, new_inflight_path, block_length)
+                #FIXME: no onfly_checksum calculation during download.
             else:
                 self.proto[self.scheme].set_path(new_inflight_path)
                 len_written = self.proto[self.scheme].get(
@@ -1127,6 +1119,9 @@ class Flow:
 
             msg['onfly_checksum'] = self.proto[self.scheme].get_sumstr()
             msg['data_checksum'] = self.proto[self.scheme].data_checksum
+
+            if 'cod,' in self.o.integrity_method and not accelerated:
+                msg['integrity'] = msg['onfly_checksum'] 
 
             msg['_deleteOnPost'] |= set(['onfly_checksum'])
 
@@ -1176,7 +1171,7 @@ class Flow:
                      (self.scheme, msg['new_dir'], msg['new_file']))
 
         if self.o.baseDir:
-            local_path = self.o.baseDir + '/' + msg['relPath']
+            local_path = self.o.set_dir_pattern(self.o.baseDir,msg) + '/' + msg['relPath']
         else:
             local_path = '/' + msg['relPath']
 
@@ -1195,7 +1190,7 @@ class Flow:
             try: 
                 os.chdir(local_dir)
             except Exception as ex:
-                logger.error("could chdir to %s to write: %s" % (local_dir, ex))
+                logger.error("could not chdir to %s to write: %s" % (local_dir, ex))
                 return False
 
         try:
@@ -1490,18 +1485,6 @@ class Flow:
             return
 
         for msg in self.worklist.incoming:
-
-            #=================================
-            # check message for local file
-            #=================================
-
-            if msg['baseUrl'] != 'file:/':
-                if hasattr(self.o,'baseDir'):
-                    msg['baseUrl'] = 'file:/' + self.o.baseDir 
-                else:
-                    logger.error("protocol should be 'file:' message ignored")
-                    self.worklist.rejected.append(msg)
-                    continue
 
             #=================================
             # proceed to send :  has to work

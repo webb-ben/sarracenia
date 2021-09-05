@@ -1487,9 +1487,13 @@ processing called *flow_callbacks* Flow_callbacks define and use additional sett
 
   flow_callback sarracenia.flowcb.log.Log
 
-The module refers to the sarracenia/flowcb/msg/log.py file in the installed package.
-In that file, the Log class is the one searched for entry points.
-The log.py file included in the package is like this::
+There is also a shorter form to express the same thing::
+
+  callback log
+
+Either way, the module refers to the sarracenia/flowcb/msg/log.py file in the
+installed package. In that file, the Log class is the one searched for entry
+points. The log.py file included in the package is like this::
 
   from sarracenia.flowcb import FlowCB
   import logging
@@ -2384,7 +2388,8 @@ option, with the use of *${..}* notation::
 
    SOURCE   - the amqp user that injected data (taken from the message.)
    BD       - the base directory
-   BRP      - the baseUrl path.
+   BUP      - the path component of the baseUrl (aka base url path) 
+   BUPL     - the last element of the baseUrl path.
    PBD      - the post base dir
    YYYYMMDD - the current daily timestamp.
    HH       - the current hourly timestamp.
