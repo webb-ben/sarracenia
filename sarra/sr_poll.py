@@ -147,7 +147,7 @@ class sr_poll(sr_post):
     def _file_date_exceed_limit(self, date, time_limit):
         """comments:
             This method compares today's date to the file's date by creating a date time object
-            Four formats are acceptd so far, more can be added if needed (format on https://strftime.org/ )
+            Five formats are acceptd so far, more can be added if needed (format on https://strftime.org/ )
             Files with future dates are processed as long as the (future date - todays date) is < time_limit.
             FIXME: french input like Fev will not work - only Feb is accepted for the month
             If year is not provided, this means that the file is < 6 months old, so depending on todays date,
@@ -188,10 +188,17 @@ class sr_poll(sr_post):
                                           str(abs((file_date - current_date).seconds)) + " seconds old")
                         return abs((file_date - current_date).seconds) < time_limit
                     except Exception as e:
-                        warning_msg = str(e)
-                        # self.logger.error("%s, assuming ok" % warning_msg)
-                        self.logger.error("Assuming ok, unrecognized date format, %s" % date)
-                        return True
+                        try:
+                            date = date.split()[0].replace('-', '/')
+                            file_date = datetime.datetime.strptime(date, '%x')
+                            self.logger.debug("File date is: " + str(file_date) + " > File is " +
+                                              str(abs((file_date - current_date).seconds)) + " seconds old")
+                            return abs((file_date - current_date).seconds) < time_limit
+                        except:
+                            warning_msg = str(e)
+                            # self.logger.error("%s, assuming ok" % warning_msg)
+                            self.logger.error("Assuming ok, unrecognized date format, %s" % date)
+                            return True
 
     # find differences between current ls and last ls
     # only the newer or modified files will be kept...
@@ -207,8 +214,10 @@ class sr_poll(sr_post):
 
         old_ls = self.load_ls_file(lspath)
 
-        # compare
+        # assuming file is within appropriate date limit and should be processed (unless we can find a date indicating it is too old)
+        file_within_date_limit = True
 
+        # compare
         filelst = []
         desclst = {}
 
@@ -222,27 +231,30 @@ class sr_poll(sr_post):
                 # this format could change depending on plugin
                 # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
                 date = str2[5] + " " + str2[6] + " " + str2[7]
-                if self._file_date_exceed_limit(date, self.file_time_limit):
-                    self.logger.debug("File should be processed")
-                    # execute rest of code
-                    # keep a newer entry
-                    if not f in old_ls:
-                        # self.logger.debug("IS NEW %s" % f)
-                        filelst.append(f)
-                        desclst[f] = ls[f]
-                        continue
-
-                    # keep a modified entry
-                    if ls[f] != old_ls[f]:
-                        # self.logger.debug("IS DIFFERENT %s from (%s,%s)" % (f,old_ls[f],ls[f]))
-                        filelst.append(f)
-                        desclst[f] = ls[f]
-                        continue
-                else:
-                    self.logger.debug("File should be skipped")
-                    # ignore rest of code and re iterate
+                file_within_date_limit = self._file_date_exceed_limit(date, self.file_time_limit)
             except:
+                # format date was not recognized so assuming the date is ok.
                 pass
+            if file_within_date_limit:
+                self.logger.debug("File should be processed")
+                # execute rest of code
+                # keep a newer entry
+                if not f in old_ls:
+                    # self.logger.debug("IS NEW %s" % f)
+                    filelst.append(f)
+                    desclst[f] = ls[f]
+                    continue
+
+                # keep a modified entry
+                if ls[f] != old_ls[f]:
+                    # self.logger.debug("IS DIFFERENT %s from (%s,%s)" % (f,old_ls[f],ls[f]))
+                    filelst.append(f)
+                    desclst[f] = ls[f]
+                    continue
+            else:
+                self.logger.debug("File should be skipped")
+                # ignore th file and re iterate
+
             # self.logger.debug("IS IDENTICAL %s" % f)
 
         return filelst, desclst
