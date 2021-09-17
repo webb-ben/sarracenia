@@ -144,61 +144,40 @@ class sr_poll(sr_post):
             self.pulls[maskDir].append(mask)
 
 
+
+
     def _file_date_exceed_limit(self, date, time_limit):
         """comments:
-            This method compares today's date to the file's date by creating a date time object
-            Five formats are acceptd so far, more can be added if needed (format on https://strftime.org/ )
-            Files with future dates are processed as long as the (future date - todays date) is < time_limit.
+            This method compares today's date to the file's date by creating a date time object. Nine formats are
+            acceptd so far, more can be added if needed (format on https://strftime.org/ ). Files with future dates
+            are processed as long as the (future date - todays date) is < time_limit.
             FIXME: french input like Fev will not work - only Feb is accepted for the month
-            If year is not provided, this means that the file is < 6 months old, so depending on todays date,
-                assign appropriate year (for jan-jun -> assign prev year, for jul-dec assign current year)
+            If year is not provided, this means that the file is < 6 months old, so depending on todays date, assign
+            appropriate year (for todays year: jan-jun -> assign prev year, for jul-dec assign current year)
             Note: is it possible for a file to be more than 6 months old and have the format Mo Day TIME ? (problematic)
         """
-        time_limit=int(time_limit)
+        time_limit = int(time_limit)
         current_date = datetime.datetime.now()
-        try:
-            date_temp = datetime.datetime.strptime(date, '%d %b %H:%M')
-            if date_temp.month - current_date.month >= 6:
-                file_date = date_temp.replace(year=(current_date.year - 1))
-            else:
-                file_date = date_temp.replace(year=current_date.year)
-            self.logger.debug("File date is: " + str(file_date) +
-                             " > File is " + str(abs((file_date - current_date).seconds))+" seconds old")
-            return abs((file_date - current_date).seconds) < time_limit
-        except Exception as e:
+        accepted_date_formats = ['%d %b %H:%M', '%d %B %H:%M', '%b %d %H:%M', '%B %d %H:%M',
+                                 '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
+        for i in accepted_date_formats:
             try:
-                date_temp = datetime.datetime.strptime(date, '%b %d %H:%M')
-                if date_temp.month - current_date.month >= 6:
-                    file_date = date_temp.replace(year=(current_date.year - 1))
-                else:
-                    file_date = date_temp.replace(year=current_date.year)
-                self.logger.debug("File date is: " + str(file_date) +
-                                 " > File is " + str(abs((file_date - current_date).seconds))+" seconds old")
+                # case 1: the date contains - instead of /. Must be replaced
+                if "-" in date:
+                    date = date.split()[0].replace('-', '/')
+                file_date = datetime.datetime.strptime(date, i)
+                # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
+                if file_date.year == 1900:
+                    if file_date.month - current_date.month >= 6:
+                        file_date = file_date.replace(year=(current_date.year - 1))
+                    else:
+                        file_date = file_date.replace(year=current_date.year)
+                self.logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
                 return abs((file_date - current_date).seconds) < time_limit
             except Exception as e:
-                try:
-                    file_date = datetime.datetime.strptime(date, '%b %d %Y')
-                    self.logger.debug("File date is: " + str(file_date) +
-                                     " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
-                    return abs((file_date - current_date).seconds) < time_limit
-                except Exception as e:
-                    try:
-                        file_date = datetime.datetime.strptime(date, '%d %b %Y')
-                        self.logger.debug("File date is: " + str(file_date) + " > File is " +
-                                          str(abs((file_date - current_date).seconds)) + " seconds old")
-                        return abs((file_date - current_date).seconds) < time_limit
-                    except Exception as e:
-                        try:
-                            date = date.split()[0].replace('-', '/')
-                            file_date = datetime.datetime.strptime(date, '%x')
-                            self.logger.debug("File date is: " + str(file_date) + " > File is " +
-                                              str(abs((file_date - current_date).seconds)) + " seconds old")
-                            return abs((file_date - current_date).seconds) < time_limit
-                        except:
-                            warning_msg = str(e)
-                            # self.logger.error("%s, assuming ok" % warning_msg)
-                            self.logger.error("Assuming ok, unrecognized date format, %s" % date)
-                            return True
+                self.logger.error("Assuming ok, unrecognized date format, %s" % date)
+                return True
+
 
     # find differences between current ls and last ls
     # only the newer or modified files will be kept...
