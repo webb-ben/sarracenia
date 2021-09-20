@@ -100,54 +100,42 @@ class Poll(Flow):
         return False
 
 
-    def _file_date_within_limit(self, date, time_limit):
+    def _file_date_exceed_limit(self, date, time_limit):
         """comments:
-            This method compares today's date to the file's date by creating a date time object
-            Three formats are acceptd so far, more can be added if needed (format on https://strftime.org/ )
-            Files with future dates are processed as long as the (future date - todays date) is < time_limit.
+            This method compares today's date to the file's date by creating a date time object. Nine formats are
+            acceptd so far, more can be added if needed (format on https://strftime.org/ ). Files with future dates
+            are processed as long as the (future date - todays date) is < time_limit.
             FIXME: french input like Fev will not work - only Feb is accepted for the month
-            If year is not provided, this means that the file is < 6 months old, so depending on todays date,
-                assign appropriate year (for jan-jun -> assign prev year, for jul-dec assign current year)
+            If year is not provided, this means that the file is < 6 months old, so depending on todays date, assign
+            appropriate year (for todays year: jan-jun -> assign prev year, for jul-dec assign current year)
             Note: is it possible for a file to be more than 6 months old and have the format Mo Day TIME ? (problematic)
         """
         time_limit = int(time_limit)
         current_date = datetime.datetime.now()
-        try:
-            date_temp = datetime.datetime.strptime(date, '%d %b %H:%M')
-            if date_temp.month - current_date.month >= 6:
-                file_date = date_temp.replace(year=(current_date.year - 1))
-            else:
-                file_date = date_temp.replace(year=current_date.year)
-            logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
-            return abs((file_date - current_date).seconds) < time_limit
-        except Exception as e:
+        accepted_date_formats = ['%d %b %H:%M', '%d %B %H:%M', '%b %d %H:%M', '%B %d %H:%M',
+                                 '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
+        for i in accepted_date_formats:
             try:
-                date_temp = datetime.datetime.strptime(date, '%b %d %H:%M')
-                if date_temp.month - current_date.month >= 6:
-                    file_date = date_temp.replace(year=(current_date.year - 1))
-                else:
-                    file_date = date_temp.replace(year=current_date.year)
-                logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
+                # case 1: the date contains - instead of /. Must be replaced
+                if "-" in date:
+                    date = date.split()[0].replace('-', '/')
+                file_date = datetime.datetime.strptime(date, i)
+                # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
+                if file_date.year == 1900:
+                    if file_date.month - current_date.month >= 6:
+                        file_date = file_date.replace(year=(current_date.year - 1))
+                    else:
+                        file_date = file_date.replace(year=current_date.year)
+                logger.debug("File date is: " + str(file_date) + " > File is " +
+                             str(abs((file_date - current_date).seconds)) + " seconds old")
                 return abs((file_date - current_date).seconds) < time_limit
             except Exception as e:
-                try:
-                    file_date = datetime.datetime.strptime(date, '%b %d %Y')
-                    logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
-                    return abs((file_date - current_date).seconds) < time_limit
-                except Exception as e:
-                    try:
-                        file_date = datetime.datetime.strptime(date, '%d %b %Y')
-                        logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
-                        return abs((file_date - current_date).seconds) < time_limit
-                    except Exception as e:
-                        warning_msg = str(e)
-                        logger.error("%s, assuming ok" % warning_msg)
-                        return True
+                logger.error("Assuming ok, unrecognized date format, %s" % date)
+                return True
 
 
     # find differences between current ls and last ls
     # only the newer or modified files will be kept and the ones withing a specific time limit, default 60d
-
 
     def differ_ls_file(self, ls, lspath):
 
@@ -164,38 +152,45 @@ class Poll(Flow):
         filelst = []
         desclst = {}
 
+        # assuming file is within appropriate date limit and should be processed (unless we can find a date indicating it is too old)
+        file_within_date_limit = True
+
         for f in new_lst:
             # logger.debug("checking %s (%s)" % (f, ls[f]))
+            str1 = str(ls[f])
+            str2 = str1.split()
             try:
-                str1 = ls[f]
-                str2 = str1.split()
                 # specify input for this routine.
                 # ls[f] format controlled by online plugin (line_mode.py)
                 # this format could change depending on plugin
                 # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
                 date = str2[5] + " " + str2[6] + " " + str2[7]
-                if self._file_date_within_limit(date, self.o.file_time_limit):
-                    #logger.debug("File should be processed")
-
-                    # execute rest of code
-                    # keep a newer entry
-                    if not f in old_ls:
-                        # logger.debug("IS NEW %s" % f)
-                        filelst.append(f)
-                        desclst[f] = ls[f]
-                        continue
-
-                    # keep a modified entry
-                    if ls[f] != old_ls[f]:
-                        # logger.debug("IS DIFFERENT %s from (%s,%s)" %(f, old_ls[f], ls[f]))
-                        filelst.append(f)
-                        desclst[f] = ls[f]
-                        continue
-                else:
-                    # ignore rest of code and re iterate
-                    logger.debug("File should be skipped")
+                file_within_date_limit = self._file_date_exceed_limit(date, self.o.file_time_limit)
             except:
+                # date was not recognized and could not be parsed so assuming the date is ok.
+                logger.error("Assuming ok, couldn't parse date properly: %s", str1)
                 pass
+
+            if file_within_date_limit:
+                #logger.debug("File should be processed")
+                # execute rest of code
+                # keep a newer entry
+                if not f in old_ls:
+                    # logger.debug("IS NEW %s" % f)
+                    filelst.append(f)
+                    desclst[f] = ls[f]
+                    continue
+
+                # keep a modified entry
+                if ls[f] != old_ls[f]:
+                    # logger.debug("IS DIFFERENT %s from (%s,%s)" %(f, old_ls[f], ls[f]))
+                    filelst.append(f)
+                    desclst[f] = ls[f]
+                    continue
+            else:
+                # ignore code and re iterate
+                logger.debug("File should be skipped")
+
             # logger.debug("IS IDENTICAL %s" % f)
 
         return filelst, desclst
