@@ -160,11 +160,10 @@ class sr_poll(sr_post):
         current_date = datetime.datetime.now()
         accepted_date_formats = ['%d %b %H:%M', '%d %B %H:%M', '%b %d %H:%M', '%B %d %H:%M',
                                  '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
+        # case 1: the date contains - instead of /. Must be replaced
+        if "-" in date: date = date.split()[0].replace('-', '/')
         for i in accepted_date_formats:
             try:
-                # case 1: the date contains - instead of /. Must be replaced
-                if "-" in date:
-                    date = date.split()[0].replace('-', '/')
                 file_date = datetime.datetime.strptime(date, i)
                 # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
                 if file_date.year == 1900:
@@ -175,8 +174,11 @@ class sr_poll(sr_post):
                 self.logger.debug("File date is: " + str(file_date) + " > File is " + str(abs((file_date - current_date).seconds)) + " seconds old")
                 return abs((file_date - current_date).seconds) < time_limit
             except Exception as e:
-                self.logger.error("Assuming ok, unrecognized date format, %s" % date)
-                return True
+                #try another date format
+                pass
+        # reaching this point - no date format worked
+        self.logger.error("Assuming ok, unrecognized date format, %s" % date)
+        return True
 
 
     # find differences between current ls and last ls
@@ -212,7 +214,7 @@ class sr_poll(sr_post):
                 date = str2[5] + " " + str2[6] + " " + str2[7]
                 file_within_date_limit = self._file_date_exceed_limit(date, self.file_time_limit)
             except:
-                # format date was not recognized so assuming the date is ok.
+                logger.error("Assuming ok, couldn't parse date properly: %s", str1)
                 pass
             if file_within_date_limit:
                 self.logger.debug("File should be processed")
