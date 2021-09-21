@@ -114,11 +114,10 @@ class Poll(Flow):
         current_date = datetime.datetime.now()
         accepted_date_formats = ['%d %b %H:%M', '%d %B %H:%M', '%b %d %H:%M', '%B %d %H:%M',
                                  '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
+        # case 1: the date contains - instead of /. Must be replaced
+        if "-" in date: date = date.split()[0].replace('-', '/')
         for i in accepted_date_formats:
             try:
-                # case 1: the date contains - instead of /. Must be replaced
-                if "-" in date:
-                    date = date.split()[0].replace('-', '/')
                 file_date = datetime.datetime.strptime(date, i)
                 # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
                 if file_date.year == 1900:
@@ -130,8 +129,10 @@ class Poll(Flow):
                              str(abs((file_date - current_date).seconds)) + " seconds old")
                 return abs((file_date - current_date).seconds) < time_limit
             except Exception as e:
-                logger.error("Assuming ok, unrecognized date format, %s" % date)
-                return True
+                # try another date format
+                pass
+        logger.error("Assuming ok, unrecognized date format, %s" % date)
+        return True
 
 
     # find differences between current ls and last ls
