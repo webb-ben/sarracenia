@@ -352,7 +352,6 @@ class sr_config:
 
         if self.program_name == 'sr_poll' :
             self.logger.info( '\t\ton_line: %s' % ''.join( map( self.xcl , self.on_line_list ) ) )
-            self.logger.info( '\t\ton_file_date_exceed_limit: %s' % ''.join( map( self.xcl , self.on_file_date_exceed_limit_list) ) )
             self.logger.info( '\t\ton_html_page: %s' % ''.join( map( self.xcl , self.on_html_page_list ) ) )
             self.logger.info( '\t\tdo_poll: %s' % ''.join( map( self.xcl , self.do_poll_list ) ) )
 
@@ -884,7 +883,7 @@ class sr_config:
         self.on_watch             = None
 
         self.plugin_times = [ 'destfn_script', 'on_data', 'on_message', 'on_file', 'on_post', \
-            'on_heartbeat', 'on_html_page', 'on_part', 'on_line', 'on_file_date_exceed_limit', 'on_watch', 'do_poll', \
+            'on_heartbeat', 'on_html_page', 'on_part', 'on_line', 'on_watch', 'do_poll', \
             'do_download', 'do_get', 'do_put', 'do_send', 'do_task', 'on_report', \
             'on_start', 'on_stop' ]
 
@@ -904,7 +903,7 @@ class sr_config:
 
         #self.on_post_list = [ self.on_post ]
         self.execfile("on_line",'line_mode')
-        self.execfile("on_file_date_exceed_limit",'file_date_exceed_limit')
+        self.execfile("on_line",'line_date')
 
 
     # this function converts duration into a specifid unit: [milliseconds, seconds or days]

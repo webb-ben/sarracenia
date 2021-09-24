@@ -9,7 +9,7 @@
     Note: is it possible for a file to be more than 6 months old and have the format Mo Day TIME ? (problematic)
 """
 
-class File_date_exceed_limit(object):
+class Line_date(object):
     def __init__(self, parent):
         pass
 
@@ -41,8 +41,9 @@ class File_date_exceed_limit(object):
     def perform(self,parent):
         if hasattr(parent,'date') and hasattr(parent, 'file_time_limit'):
             return self._file_date_exceed_limit(parent, parent.date, parent.file_time_limit)
+        return False
 
-file_date_exceed_limit = File_date_exceed_limit(self)
-self.on_file_date_exceed_limit = file_date_exceed_limit.perform
+line_date = Line_date(self)
+self.on_line = line_date.perform
 
 

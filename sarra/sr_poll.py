@@ -175,14 +175,16 @@ class sr_poll(sr_post):
                 # this format could change depending on plugin
                 # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
                 self.date = str2[5] + " " + str2[6] + " " + str2[7]
-                if self.on_file_date_exceed_limit_list:
-                    for plugin in self.on_file_date_exceed_limit_list:
-                        file_within_date_limit = plugin(self)
+
+                if self.on_line_list:
+                    for plugin in self.on_line_list:
+                        if "Line_date" in str(plugin):
+                            file_within_date_limit = plugin(self)
                 else:
                     # This is the expected plugin:
-                    logger.error("plugin not found: file_date_exceed_limit.py")
+                    logger.error("plugin not found: line_date.py")
             except:
-                logger.error("Assuming ok, couldn't parse date properly: %s", str1)
+                self.logger.error("Assuming ok, couldn't parse date properly: %s", str1)
                 pass
             if file_within_date_limit:
                 self.logger.debug("File should be processed")
@@ -342,8 +344,8 @@ class sr_poll(sr_post):
 
                 if self.on_line_list:
                     for plugin in self.on_line_list:
-                        ok = plugin(self)
-                        if not ok: break
+                        if "Line_Mode" in str(plugin):
+                            ok = plugin(self)
                     if not ok: continue
 
                 if self.line[0] == 'd':
