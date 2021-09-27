@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """comments:
-    This plugin compares today's date to the file's date by creating a date time object. Nine formats are
-    acceptd so far, more can be added if needed (format on https://strftime.org/ ). Files with future dates
-    are processed as long as the (future date - todays date) is < time_limit.
+    This plugin modifies the date of parent.line to a standard date fomrat: year-month-date hours:minutes:seconds
+    An example of this date format is : 2021-09-06 11:09:00, which is Septemebr 6th, 2021 11:09PM
+    Ten formats are acceptd so far, more can be added if needed (format on https://strftime.org/ ).
     FIXME: french input like Fev will not work - only Feb is accepted for the month
     If year is not provided, this means that the file is < 6 months old, so depending on todays date, assign
     appropriate year (for todays year: jan-jun -> assign prev year, for jul-dec assign current year)
@@ -13,37 +13,37 @@ class Line_date(object):
     def __init__(self, parent):
         pass
 
-    def _file_date_exceed_limit(self, parent, date, time_limit):
-        time_limit = int(time_limit)
-        current_date = datetime.datetime.now()
-        accepted_date_formats = ['%d %b %H:%M', '%d %B %H:%M', '%b %d %H:%M', '%B %d %H:%M',
+    def _file_date_exceed_limit(self, parent):
+        line_split = parent.line.split()
+        # specify input for this routine, line format could change
+        # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
+        file_date = line_split[5] + " " + line_split[6] + " " + line_split[7]
+        accepted_date_formats = ['%b %d %H:%M', '%m-%d-%y %H:%M%p', '%d %b %H:%M', '%d %B %H:%M', '%B %d %H:%M',
                                 '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
-        # case 1: the date contains - instead of /. Must be replaced
-        if "-" in date: date = date.split()[0].replace('-', '/')
+        current_date = datetime.datetime.now()
+        # case 1: the date contains '-' implies the date is in 1 string not 3 seperate ones, and H:M is also provided
+        if "-" in file_date: file_date = line_split[5] + " " + line_split[6]
         for i in accepted_date_formats:
             try:
-                file_date = datetime.datetime.strptime(date, i)
+                standard_date_format = datetime.datetime.strptime(file_date, i)
                 # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
-                if file_date.year == 1900:
-                    if file_date.month - current_date.month >= 6:
-                        file_date = file_date.replace(year=(current_date.year - 1))
+                if standard_date_format.year == 1900:
+                    if standard_date_format.month - current_date.month >= 6:
+                        standard_date_format = standard_date_format.replace(year=(current_date.year - 1))
                     else:
-                        file_date = file_date.replace(year=current_date.year)
-                parent.logger.debug("File date is: " + str(file_date) + " > File is " + str(
-                    abs((file_date - current_date).seconds)) + " seconds old")
-                return abs((file_date - current_date).seconds) < time_limit
+                        standard_date_format = standard_date_format.replace(year=current_date.year)
+                parent.logger.info("Oldline is: " + parent.line)
+                parent.line = parent.line.replace(file_date, str(standard_date_format))
+                parent.logger.info("Newline is: " + parent.line)
+                return
             except Exception as e:
                 # try another date format
                 pass
-        parent.logger.error("Assuming ok, unrecognized date format, %s" % date)
-        return True
 
     def perform(self,parent):
-        if hasattr(parent,'date') and hasattr(parent, 'file_time_limit'):
-            return self._file_date_exceed_limit(parent, parent.date, parent.file_time_limit)
-        return False
+        if hasattr(parent, 'line'):
+            self._file_date_exceed_limit(parent)
+        return True
 
 line_date = Line_date(self)
 self.on_line = line_date.perform
-
-

@@ -168,23 +168,13 @@ class sr_poll(sr_post):
         for f in new_lst:
             # self.logger.debug("checking %s (%s)" % (f,ls[f]))
             try:
-                str1 = ls[f]
-                str2 = str1.split()
-                # specify input for this routine.
-                # ls[f] format controlled by online plugin (line_mode.py)
-                # this format could change depending on plugin
-                # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
-                self.date = str2[5] + " " + str2[6] + " " + str2[7]
-
-                if self.on_line_list:
-                    for plugin in self.on_line_list:
-                        if "Line_date" in str(plugin):
-                            file_within_date_limit = plugin(self)
-                else:
-                    # This is the expected plugin:
-                    logger.error("plugin not found: line_date.py")
+                line_split = ls[f].split()
+                date = line_split[5] + " " + line_split[6]
+                file_date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                current_date = datetime.datetime.now()
+                file_within_date_limit = abs((file_date - current_date).seconds) < self.file_time_limit
             except:
-                self.logger.error("Assuming ok, couldn't parse date properly: %s", str1)
+                self.logger.error("Assuming ok, incorrect date format for line:  %s", str1)
                 pass
             if file_within_date_limit:
                 self.logger.debug("File should be processed")
@@ -344,8 +334,8 @@ class sr_poll(sr_post):
 
                 if self.on_line_list:
                     for plugin in self.on_line_list:
-                        if "Line_Mode" in str(plugin):
-                            ok = plugin(self)
+                        ok = plugin(self)
+                        if not ok: break
                     if not ok: continue
 
                 if self.line[0] == 'd':
