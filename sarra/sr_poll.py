@@ -174,7 +174,7 @@ class sr_poll(sr_post):
                 current_date = datetime.datetime.now()
                 file_within_date_limit = abs((file_date - current_date).seconds) < self.file_time_limit
             except:
-                self.logger.error("Assuming ok, incorrect date format for line:  %s", str1)
+                self.logger.error("Assuming ok, incorrect date format for line:  %s" % ls[f])
                 pass
             if file_within_date_limit:
                 self.logger.debug("File should be processed")

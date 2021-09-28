@@ -13,13 +13,13 @@ class Line_date(object):
     def __init__(self, parent):
         pass
 
-    def _file_date_exceed_limit(self, parent):
+    def normalize_date_format(self, parent):
         line_split = parent.line.split()
         # specify input for this routine, line format could change
         # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
         file_date = line_split[5] + " " + line_split[6] + " " + line_split[7]
         accepted_date_formats = ['%b %d %H:%M', '%m-%d-%y %H:%M%p', '%d %b %H:%M', '%d %B %H:%M', '%B %d %H:%M',
-                                '%b %d %Y', '%B %d %Y', '%d %B %Y', '%d %B %Y', '%x']
+                                '%b %d %Y', '%B %d %Y', '%d %b %Y', '%d %B %Y', '%x']
         current_date = datetime.datetime.now()
         # case 1: the date contains '-' implies the date is in 1 string not 3 seperate ones, and H:M is also provided
         if "-" in file_date: file_date = line_split[5] + " " + line_split[6]
@@ -32,9 +32,9 @@ class Line_date(object):
                         standard_date_format = standard_date_format.replace(year=(current_date.year - 1))
                     else:
                         standard_date_format = standard_date_format.replace(year=current_date.year)
-                parent.logger.info("Oldline is: " + parent.line)
+                parent.logger.debug("Oldline is: " + parent.line)
                 parent.line = parent.line.replace(file_date, str(standard_date_format))
-                parent.logger.info("Newline is: " + parent.line)
+                parent.logger.debug("Newline is: " + parent.line)
                 return
             except Exception as e:
                 # try another date format
@@ -42,7 +42,7 @@ class Line_date(object):
 
     def perform(self,parent):
         if hasattr(parent, 'line'):
-            self._file_date_exceed_limit(parent)
+            self.normalize_date_format(parent)
         return True
 
 line_date = Line_date(self)
