@@ -18,12 +18,10 @@ class Line_date(object):
         # specify input for this routine, line format could change
         # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
         file_date = line_split[5] + " " + line_split[6] + " " + line_split[7]
-        accepted_date_formats = ['%b %d %H:%M', '%m-%d-%y %H:%M%p', '%d %b %H:%M', '%d %B %H:%M', '%B %d %H:%M',
-                                '%b %d %Y', '%B %d %Y', '%d %b %Y', '%d %B %Y', '%x']
         current_date = datetime.datetime.now()
         # case 1: the date contains '-' implies the date is in 1 string not 3 seperate ones, and H:M is also provided
         if "-" in file_date: file_date = line_split[5] + " " + line_split[6]
-        for i in accepted_date_formats:
+        for i in parent.accepted_date_formats:
             try:
                 standard_date_format = datetime.datetime.strptime(file_date, i)
                 # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).

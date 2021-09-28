@@ -659,6 +659,8 @@ class sr_config:
     def defaults(self):
         self.logger.debug("sr_config defaults")
         self.file_time_limit      = self.duration_from_str("60d")
+        self.accepted_date_formats = ['%b %d %H:%M', '%m-%d-%y %H:%M%p', '%d %b %H:%M', '%d %B %H:%M', '%B %d %H:%M',
+                                      '%b %d %Y', '%B %d %Y', '%d %b %Y', '%d %B %Y', '%x']
         self.retry_mode           = True
         self.retry_ttl            = None
 
@@ -1595,6 +1597,8 @@ class sr_config:
                      self.logger.debug("Masks %s"% self.masks)
                 elif words0 =='file_time_limit':
                     self.file_time_limit = self.duration_from_str(words1)
+                elif words0 == 'add_acceptable_date_format':
+                    print(self.accepted_date_formats.insert(0, ' '.join(words[1:])))
                 elif words0 in ['accept_unmatched','accept_unmatch','au']: # See: sr_config.7
                      if (words1 is None) or words[0][0:1] == '-' : 
                         self.accept_unmatch = True
