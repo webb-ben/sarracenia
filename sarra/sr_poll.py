@@ -68,7 +68,7 @@
 
 import os, sys, time
 import datetime
-
+from dateparser import parse
 # ============================================================
 # DECLARE TRICK for false self.poster
 
@@ -170,7 +170,7 @@ class sr_poll(sr_post):
             try:
                 line_split = ls[f].split()
                 date = line_split[5] + " " + line_split[6]
-                file_date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                file_date = parse(date)
                 current_date = datetime.datetime.now()
                 file_within_date_limit = abs((file_date - current_date).seconds) < self.file_time_limit
             except:
