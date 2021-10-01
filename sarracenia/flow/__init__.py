@@ -286,6 +286,7 @@ class Flow:
 
         self._runCallbacksTime('on_start')
 
+        last_gather_len = len(self.worklist.incoming)
         spamming = True
 
         while True:
@@ -302,7 +303,6 @@ class Flow:
 
                 self.ackOKandRejected('A gathered')
 
-                last_gather_len = len(self.worklist.incoming)
                 if (last_gather_len == 0):
                     spamming = True
                 else:
