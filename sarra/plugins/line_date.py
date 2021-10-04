@@ -21,7 +21,11 @@ class Line_date(object):
         # case 1: the date contains '-' implies the date is in 1 string not 3 seperate ones, and H:M is also provided
         if "-" in file_date: file_date = line_split[5] + " " + line_split[6]
         current_date = datetime.datetime.now()
-        standard_date_format = dateparser.parse(file_date, settings={'RELATIVE_BASE': datetime.datetime(1900, 1, 1)})
+        standard_date_format = dateparser.parse(file_date,
+                                                settings={
+                                                    'RELATIVE_BASE': datetime.datetime(1900, 1, 1),
+                                                    'TIMEZONE': parent.timezone,
+                                                    'TO_TIMEZONE': 'UTC'})
         if standard_date_format is not None:
             type(standard_date_format)
             # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
