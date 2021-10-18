@@ -58,6 +58,7 @@ class Poll(Flow):
         super().__init__(options)
 
         self.plugins['load'].append('sarracenia.flowcb.line_mode.Line_Mode')
+        self.plugins['load'].append('sarracenia.flowcb.line_to_SFTPattributes.Line_To_SFTPattributes')
 
         if options.vip:
             self.plugins['load'].insert(0,'sarracenia.flowcb.gather.message.Message')
@@ -205,7 +206,8 @@ class Poll(Flow):
             ls = self.dest.ls()
             new_ls = {}
             new_dir = {}
-
+            # For some reason with FTP the first line of the ls causes an index out of bounds error becuase it contains only "total ..." in line_mode.py
+            del ls['']
             # apply selection on the list
 
             for f in ls:
@@ -234,7 +236,7 @@ class Poll(Flow):
                     logger.error('line not understood, type: %s' % type(line) )
 
             return True, new_ls, new_dir
-        except:
+        except Exception as e:
             logger.warning("dest.lsdir: Could not ls directory")
             logger.debug("Exception details:", exc_info=True)
 
