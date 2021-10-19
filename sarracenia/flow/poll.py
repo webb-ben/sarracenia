@@ -17,7 +17,7 @@ import sarracenia.config
 from sarracenia.flow import Flow
 import sarracenia.transfer
 import stat
-
+import pytz
 import sys, time
 
 
@@ -169,25 +169,34 @@ class Poll(Flow):
 
         for f in new_lst:
             # logger.debug("checking %s (%s)" % (f, ls[f]))
-            
-            try:
-                str1 = ls[f]
-                str2 = str1.split()
-                # specify input for this routine.
-                # ls[f] format controlled by online plugin (line_mode.py)
-                # this format could change depending on plugin
-                # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
-                date = str2[5] + " " + str2[6] + " " + str2[7]
-                if self._file_date_within_limit(date, self.o.file_time_limit):
-                    #logger.debug("File should be processed")
+            if type(f) is paramiko.SFTPAttributes:
+                file_date = datetime.datetime.fromtimestamp(f.st_mtime, tz=timezone.utc)
+                current_date = datetime.datetime.now(pytz.utc)
+                if abs((current_date-file_date).seconds) < self.o.file_time_limit:
+                    # logger.debug("File should be processed")
                     filelst.append(f)
                     desclst[f] = ls[f]
                 else:
-                    # ignore rest of code and re iterate
                     logger.debug("File should be skipped")
-            except:
-                pass
-            # logger.debug("IS IDENTICAL %s" % f)
+
+            # try:
+            #     str1 = ls[f]
+            #     str2 = str1.split()
+            #     # specify input for this routine.
+            #     # ls[f] format controlled by online plugin (line_mode.py)
+            #     # this format could change depending on plugin
+            #     # line_mode.py format "-rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml"
+            #     date = str2[5] + " " + str2[6] + " " + str2[7]
+            #     if self._file_date_within_limit(date, self.o.file_time_limit):
+            #         #logger.debug("File should be processed")
+            #         filelst.append(f)
+            #         desclst[f] = ls[f]
+            #     else:
+            #         # ignore rest of code and re iterate
+            #         logger.debug("File should be skipped")
+            # except:
+            #     pass
+            # # logger.debug("IS IDENTICAL %s" % f)
 
         return filelst, desclst
 
@@ -207,7 +216,7 @@ class Poll(Flow):
             new_ls = {}
             new_dir = {}
             # For some reason with FTP the first line of the ls causes an index out of bounds error becuase it contains only "total ..." in line_mode.py
-            del ls['']
+
             # apply selection on the list
 
             for f in ls:
