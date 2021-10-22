@@ -542,6 +542,27 @@ class Config:
         self.declared_users = {}
         self.users = False
         self.vip = None
+        self.discard = False
+        self.pipe = False
+        self.exchange_suffix = None
+        self.destination = None
+        self.inplace = False
+        self.report_exchange = None
+        self.declare_exchange = True
+        self.sanity_log_dead = int(1.5 * self.housekeeping)
+        self.report_daemons = False
+        self.realpath_filter = False
+        self.reconnect = False
+        self.save = False
+        self.pump_flag = False
+        self.cache_stat = False
+        self.declare_queue = True
+        self.restore = False
+        self.bind_queue = True
+        self.dry_run = False
+        self.source_from_exchange = False
+        self.retry_mode = True
+        self.poll_without_vip = True
 
     def __deepcopy__(self, memo):
         """
