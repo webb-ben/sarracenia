@@ -3,6 +3,22 @@
     This plugin turns a line into SFTPattributes object. It sets the fields st_mtime, st_gid,
     st_uid, st_size, st_mode, filname, and longname.
 
+  the default on_line handler for sr_poll. Verifies file are ok to download.
+  uses parent.chmod setting as a mask to identify minimum permissions required to download file.
+
+  means owner must have read permission...
+
+sample line from sftp server:
+
+  with following setting:
+
+  chmod 400 
+
+  this would be accepted:
+  -rwxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml
+
+  this would be rejected:
+  --wxrwxr-x 1 1000 1000 8123 24 Mar 22:54 2017-03-25-0254-CL2D-AUTO-minute-swob.xml
 """
 import logging
 import paramiko
@@ -43,8 +59,10 @@ class Line_To_SFTPattributes(FlowCB):
         return mode
 
     def fileid(self, id):
-        if type(id) is str: return 1000
-        else: return id
+        if id.isnumeric():
+            return int(id)
+        else:
+            return None
 
     def filedate(self,line):
         line_split = line.split()
@@ -55,7 +73,7 @@ class Line_To_SFTPattributes(FlowCB):
         standard_date_format = dateparser.parse(file_date,
                                                 settings={
                                                     'RELATIVE_BASE': datetime.datetime(current_date.year, 1, 1),
-                                                    'TIMEZONE': 'UTC', #turn this into an option - should be EST for mtl
+                                                    'TIMEZONE': self.o.timezone, #turn this into an option - should be EST for mtl
                                                     'TO_TIMEZONE': 'UTC'})
         if standard_date_format is not None:
             # case 2: the year was not given, it is defaulted to 1900. Must find which year (this one or last one).
@@ -67,17 +85,18 @@ class Line_To_SFTPattributes(FlowCB):
 
     def on_line(self, line):
         if type(line) is paramiko.SFTPAttributes:
-            return line
-        elif type(line) is str:
+            sftp_obj = line
+        elif type(line) is str and len(line.split()) > 7:
             parts = line.split()
             sftp_obj = SFTPAttributes()
             sftp_obj.st_mode = self.filemode(parts[0])
-            sftp_obj.st_uid = int(self.fileid(parts[2]))   # 1000 if its you
-            sftp_obj.st_gid = int(self.fileid(parts[3]))   # 1000 if its you
+            sftp_obj.st_uid = self.fileid(parts[2])
+            sftp_obj.st_gid = self.fileid(parts[3])
             sftp_obj.st_size = int(parts[4])
             sftp_obj.st_mtime = self.filedate(line)
             sftp_obj.filename = parts[-1]
             sftp_obj.longname= line
+        if 'sftp_obj' in locals() and ((sftp_obj.st_mode & self.o.chmod) == self.o.chmod):
             return sftp_obj
         else:
             return None
