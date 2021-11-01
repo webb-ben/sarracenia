@@ -57,7 +57,6 @@ class Poll(Flow):
 
         super().__init__(options)
 
-        # self.plugins['load'].append('sarracenia.flowcb.line_mode.Line_Mode')
         self.plugins['load'].append('sarracenia.flowcb.line_to_SFTPattributes.Line_To_SFTPattributes')
 
         if options.vip:
@@ -111,30 +110,6 @@ class Poll(Flow):
         return False
 
 
-    def getFileNamesAndDesc(self, ls, lspath):
-        pass #guessing this function is no longer needed. Leaving here for now.
-        # """
-        #     get new list and description (date and size)
-        #     return a list of files, and descriptions.
-        # """
-        # new_lst = sorted(ls.keys())
-        #
-        # filelst = []
-        # desclst = {}
-        #
-        # for f in new_lst:
-        #     # logger.debug("checking %s (%s)" % (f, ls[f]))
-        #     file_date = datetime.datetime.fromtimestamp(f.st_mtime, tz=timezone.utc)
-        #     current_date = datetime.datetime.now(pytz.utc)
-        #     time_diff = time.time() - f.st_mtime
-        #     if abs((current_date-file_date).seconds) < self.o.file_time_limit:
-        #         # logger.debug("File should be processed")
-        #         filelst.append(f)
-        #         desclst[f] = ls[f]
-        #     else:
-        #         logger.debug("File should be skipped")
-        # return filelst, desclst
-
 
     def gather(self):
 
@@ -165,13 +140,10 @@ class Poll(Flow):
                         if (line is None) or (line == ""): break
                     if (line is None) or (line == ""): 
                         continue
-                if type(line) is paramiko.SFTPAttributes: #can remove eventually I think
-                    if stat.S_ISDIR(line.st_mode):
-                         new_dir[f] = line
-                    else:
-                        new_ls[f] = line
+                if stat.S_ISDIR(line.st_mode):
+                    new_dir[f] = line
                 else:
-                    logger.error('line not understood, type: %s' % type(line) )
+                    new_ls[f] = line
 
             return True, new_ls, new_dir
         except Exception as e:
@@ -199,15 +171,8 @@ class Poll(Flow):
         # when not sleeping
         #if not self.sleeping :
         if True:
-
-            # get file list from difference in ls
-
-            #can delete this whole if else as well I believe
-            if (len(file_dict) > 0) and type(list(file_dict.values())[0]) is str:
-                filelst, desclst = self.getFileNamesAndDesc(file_dict, lspath)
-            else: # SFTPAttributes
-                filelst = file_dict.keys()
-                desclst = file_dict
+            filelst = file_dict.keys()
+            desclst = file_dict
 
             logger.debug("poll_directory: new files found %d" % len(filelst))
 
