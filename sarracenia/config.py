@@ -145,6 +145,7 @@ convert_to_v3 = {
     },
     'do_send': {
        'file_email' : [ 'flow_callback', 'sarracenia.flowcb.send.email.Email' ],
+       'sendlog' : [ 'flow_callback', 'sarracenia.flowcb.send.sendlog.SendLog' ],
     },
     'no_download': [ 'download', 'False' ],
     'on_message': {
