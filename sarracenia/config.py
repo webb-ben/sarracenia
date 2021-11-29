@@ -134,6 +134,13 @@ str_options = [
    accelerators and rate limiting are now built-in, no plugin required.
 """
 convert_to_v3 = {
+    'on_file' :{
+        'citypagecheck' : ['flow_callback', 'sarracenia.flowcb.after_work.citypagecheck.CityPageCheck'],
+        'check' : ['flow_callback', 'sarracenia.flowcb.after_work.check.Check'],
+        'fileage' : ['flow_callback', 'sarracenia.flowcb.after_work.fileage.FileAge'],
+        'repairsize' : ['flow_callback', 'sarracenia.flowcb.after_work.repairsize.RepairSize']
+
+    },
     'plugin': {
         'msg_fdelay': ['flow_callback', 'sarracenia.flowcb.filter.fdelay.FDelay'],
         'msg_pclean_f90':

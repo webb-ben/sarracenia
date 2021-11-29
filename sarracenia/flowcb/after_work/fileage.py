@@ -16,7 +16,7 @@ from sarracenia.flowcb import FlowCB
 
 logger = logging.getLogger(__name__)
 
-class Age(FlowCB):
+class FileAge(FlowCB):
     def __init__(self, options):
         self.o = options
         logger.debug("file_age initialized")
