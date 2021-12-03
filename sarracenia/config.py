@@ -494,10 +494,6 @@ class Config:
         self.chmod = 0o0
         self.chmod_dir = 0o775
         self.chmod_log = 0o600
-
-        self.file_time_limit = durationToSeconds("60d")
-        self.nodupe_file_time_limit = durationToSeconds("60d")
-        self.timezone = 'UTC'
         self.debug = False
         self.declared_exchanges = []
         self.destfn_script = None
@@ -527,6 +523,7 @@ class Config:
         self.masks = []
         self.instances = 1
         self.mirror = False
+        self.nodupe_file_age_maximum = 0
         self.post_exchanges = []
 	#self.post_topicPrefix = None
         self.pstrip = False
@@ -537,6 +534,7 @@ class Config:
         self.settings = {}
         self.strip = 0
         self.timeout = 300
+        self.timezone = 'UTC'
         self.tls_rigour = 'normal'
         self.topicPrefix = [ 'v03', 'post' ]
         self.undeclared = []
